@@ -144,7 +144,7 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
     <button class="mode" id="m-pcm"><strong>Process Communication</strong><span>14 situations, une réponse chacune. 6 types : L'Empathique, Le Persévérant, Le Travailleur (ou Analyseur), Le Promoteur, Le Rêveur (ou Imagineur), Le Rebelle (ou Énergiseur)</span></button>
     <button class="mode" id="m-disc"><strong>DISC</strong><span>24 blocs de 4 affirmations : la plus et la moins fidèle. 4 styles (Dominance, Influence, Stabilité, Conformité) et 16 profils</span></button>
   </div>
-  <p class="muted">Durée : environ 5 minutes pour Process Communication, 10 minutes pour DISC. Outils pédagogiques d'auto-observation, non validés psychométriquement. Ils ne remplacent pas les inventaires officiels (PCI pour Process Com, évaluations DISC certifiées) administrés par un professionnel formé.</p>
+  <p class="muted">Durée : environ 5 minutes pour Process Communication, 10 minutes pour DISC. Outils pédagogiques d'auto-observation, à visée informative. Ils ne remplacent pas les inventaires officiels, mais tendent vers leurs résultats (PCI pour Process Com, évaluations DISC certifiées).</p>
 </section>
 
 <section id="quiz" class="hidden">
@@ -968,7 +968,7 @@ function fullText(){
   const r=lastResult;
   return "Mes résultats – "+r.titre+"\n\n"+r.entete+"\n"+r.lignes.map(l=>"- "+l).join("\n")+
     "\n\n"+r.synthese.join("\n\n")+
-    "\n\nOutil pédagogique d'auto-observation, non validé psychométriquement.";
+    "\n\nOutil pédagogique d'auto-observation, à visée informative. Ils ne remplacent pas les inventaires officiels, mais tendent vers leurs résultats (PCI pour Process Com, évaluations DISC certifiées).";
 }
 
 $("mailform").addEventListener("submit",e=>{
