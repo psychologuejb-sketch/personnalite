@@ -89,6 +89,28 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .mailrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
 .mailrow input{flex:1 1 220px;min-width:0;padding:12px 16px;border-radius:999px;border:2px solid var(--line);background:var(--field);color:var(--ink);font:inherit}
 .nav{margin-top:22px}
+.pmrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:14px;background:var(--field)}
+.pmrow.sel{border-color:var(--accent)}
+.pmtxt{flex:1;min-width:0}
+.pmbtns{display:flex;gap:8px;flex:none}
+.pmbtn{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-weight:800;font-size:1.3rem;line-height:1;padding:0}
+.pmbtn[aria-pressed="true"].plus{background:var(--sel);border-color:var(--accent);color:#16201E}
+.pmbtn[aria-pressed="true"].minus{background:var(--pink);border-color:#1A1A1A;color:#1A1A1A}
+.pmhelp{margin:0 0 4px}
+.dv{margin:0 0 16px}
+.dv .row{display:flex;justify-content:space-between;font-weight:700;margin-bottom:4px}
+.dv .track{position:relative;height:14px;background:var(--track);border-radius:7px;overflow:hidden}
+.dv .mid{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);opacity:.5;z-index:1}
+.dv .fill2{position:absolute;top:0;bottom:0;width:0;transition:width .6s}
+.dv .cap{font-size:.85rem;color:var(--muted);margin-top:3px}
+@media (prefers-reduced-motion: reduce){.dv .fill2{transition:none}}
+.detail h4{margin:16px 0 6px;font-size:1rem;color:var(--head)}
+.detail h4:first-of-type{margin-top:8px}
+.detail .sub{font-weight:700;margin:10px 0 2px;font-size:.92rem}
+.detail summary{cursor:pointer;font-weight:700;font-size:1.05rem;color:var(--head)}
+.detail details[open] summary{margin-bottom:4px}
+.detail ul{margin:4px 0 8px}
+.detail li{margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -117,12 +139,12 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 
 <section id="intro" class="card hidden">
   <h1>Votre profil de personnalité</h1>
-  <p>Choisissez le modèle. Dans les deux cas, 14 situations du quotidien : une seule réponse par situation, celle qui vous ressemble le plus, spontanément.</p>
+  <p>Choisissez le modèle. Répondez spontanément : la première réaction est la plus juste.</p>
   <div class="modes">
-    <button class="mode" id="m-pcm"><strong>Process Communication</strong><span>6 types : L'Empathique, Le Persévérant, Le Travailleur (ou Analyseur), Le Promoteur, Le Rêveur (ou Imagineur), Le Rebelle (ou Énergiseur)</span></button>
-    <button class="mode" id="m-disc"><strong>DISC</strong><span>4 profils : Dominant, Influent, Stable, Consciencieux</span></button>
+    <button class="mode" id="m-pcm"><strong>Process Communication</strong><span>14 situations, une réponse chacune. 6 types : L'Empathique, Le Persévérant, Le Travailleur (ou Analyseur), Le Promoteur, Le Rêveur (ou Imagineur), Le Rebelle (ou Énergiseur)</span></button>
+    <button class="mode" id="m-disc"><strong>DISC</strong><span>24 blocs de 4 affirmations : la plus et la moins fidèle. 4 styles (Dominance, Influence, Stabilité, Conformité) et 16 profils</span></button>
   </div>
-  <p class="muted">Durée : environ 5 minutes. Outils pédagogiques d'auto-observation, non validés psychométriquement. Ils ne remplacent pas les inventaires officiels (PCI pour Process Com, évaluations DISC certifiées) administrés par un professionnel formé.</p>
+  <p class="muted">Durée : environ 5 minutes pour Process Communication, 10 minutes pour DISC. Outils pédagogiques d'auto-observation, non validés psychométriquement. Ils ne remplacent pas les inventaires officiels (PCI pour Process Com, évaluations DISC certifiées) administrés par un professionnel formé.</p>
 </section>
 
 <section id="quiz" class="hidden">
@@ -146,6 +168,7 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
     <div id="bars"></div>
     <div class="detail" id="base"></div>
     <div class="detail" id="second"></div>
+    <div class="detail hidden" id="third"></div>
     <p class="muted" id="rnote"></p>
     <div class="share">
       <h2>Schéma du modèle</h2>
@@ -160,6 +183,11 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
         <button class="btn" type="submit">M'envoyer mes résultats</button>
       </div>
       <p class="muted" id="mailmsg" role="status">Votre adresse n'est pas enregistrée : elle sert uniquement à préparer le message dans votre messagerie.</p>
+      <p class="muted">Un texte long peut être coupé ou refusé par certaines messageries. Dans ce cas, copiez ou téléchargez le texte complet :</p>
+      <div class="mailrow">
+        <button class="btn ghost" type="button" id="copybtn">Copier le texte</button>
+        <button class="btn ghost" type="button" id="txtbtn">Télécharger (.txt)</button>
+      </div>
     </form>
     <div class="nav">
       <button class="btn ghost" id="again">Recommencer</button>
@@ -179,31 +207,181 @@ const MODES = {
   labelSecond:"Deuxième type (phase possible)",
   note:"Dans le modèle, chacun possède les six types à des degrés divers. Le type de base et la phase (le deuxième type) se confirment avec l'inventaire officiel et un échange avec un professionnel certifié.",
   types:{
-   E:{nom:"L'Empathique",couleur:"var(--c-empathique)",
-      resume:"Chaleureux, sensible et attentif aux autres. Perçoit le monde à travers les émotions et le ressenti.",
-      besoins:["Être reconnu pour qui il est, pas seulement pour ce qu'il fait","Moments conviviaux et contacts sensoriels agréables"],
-      conseil:"Pour communiquer avec lui : montrez de l'attention personnelle, adoptez un ton chaleureux, prenez le temps de la relation."},
-   T:{nom:"Le Travailleur (ou Analyseur)",couleur:"var(--c-travaillomane)",
-      resume:"Logique, organisé et responsable. Perçoit le monde à travers les pensées, les faits et les données.",
-      besoins:["Être reconnu pour son travail et ses compétences","Structurer son temps et avoir un cadre clair"],
-      conseil:"Pour communiquer avec lui : soyez factuel, précis, structuré, et respectez les échéances."},
-   P:{nom:"Le Persévérant",couleur:"var(--c-perseverant)",
-      resume:"Engagé, consciencieux et attaché à ses valeurs. Perçoit le monde à travers ses opinions et ses convictions.",
-      besoins:["Être reconnu pour son travail et ses convictions","Que ses engagements aient du sens"],
-      conseil:"Pour communiquer avec lui : demandez son avis, donnez du sens, reconnaissez son engagement."},
-   R:{nom:"Le Rêveur (ou Imagineur)",couleur:"var(--c-reveur)",
-      resume:"Calme, réfléchi et imaginatif. Perçoit le monde à travers l'introspection et l'inaction contemplative.",
-      besoins:["Du temps seul, au calme","De la clarté dans les consignes, sans pression"],
-      conseil:"Pour communiquer avec lui : donnez des directives simples et précises, laissez-lui du temps, ne le mettez pas sous les projecteurs."},
-   Rb:{nom:"Le Rebelle (ou Énergiseur)",couleur:"var(--c-rebelle)",
-      resume:"Spontané, créatif et joueur. Perçoit le monde à travers ses réactions : j'aime / je n'aime pas.",
-      besoins:["Contacts ludiques, humour et créativité","Liberté de s'exprimer et de réagir"],
-      conseil:"Pour communiquer avec lui : soyez direct, ludique, laissez-lui des marges de liberté."},
-   Pr:{nom:"Le Promoteur",couleur:"var(--c-promoteur)",
-      resume:"Charmeur, adaptable et orienté vers l'action. Perçoit le monde à travers ses actions.",
-      besoins:["Excitation, défis et résultats rapides","Contact stimulant et dynamique"],
-      conseil:"Pour communiquer avec lui : allez à l'essentiel, proposez des défis concrets, soyez réactif."}
-  },
+ "E": {
+  "nom": "L'Empathique",
+  "couleur": "var(--c-empathique)",
+  "detail": {
+   "qui": "Vous êtes chaleureux, sensible et attentif aux autres. Vous percevez le monde par vos émotions et votre ressenti : vous captez vite l'ambiance d'un groupe et ce que chacun traverse. Compatissant et spontané, vous êtes souvent apprécié pour votre présence et votre bienveillance.",
+   "fonction": [
+    "Votre moteur : recevoir de la reconnaissance pour qui vous êtes, pas seulement pour ce que vous faites, et vivre des moments agréables pour les sens (confort, convivialité, chaleur humaine).",
+    "Vous travaillez mieux dans un climat chaleureux, avec des collègues avec lesquels vous avez un vrai lien.",
+    "Vous avez besoin de contact et de temps relationnel : un environnement froid ou l'isolement vous éteignent vite.",
+    "Sous stress léger, vous cherchez à faire plaisir à l'excès (driver « Fais plaisir ») : vous vous adaptez trop aux autres, vous justifiez beaucoup et vous osez difficilement dire non."
+   ],
+   "communique": [
+    "Votre canal préféré est le canal nourricier : un ton chaleureux et doux, de l'attention portée à l'autre, de la valorisation.",
+    "Vous parlez volontiers de ce que vous ressentez et de ce que ressentent les autres, avec des mots comme « j'apprécie » ou « je ressens ».",
+    "Vous écoutez bien, mais vous avez du mal à formuler une critique ou un refus de façon franche."
+   ],
+   "faire": [
+    "Prendre un moment pour demander comment vous allez avant d'entrer dans le sujet.",
+    "Adopter un ton chaleureux et montrer une attention personnelle.",
+    "Valoriser la personne, pas seulement le travail réalisé.",
+    "Vous laisser de la place pour exprimer vos ressentis."
+   ],
+   "eviter": [
+    "Un ton sec, directif ou froid, des consignes données sans contact humain.",
+    "L'ironie et les critiques brusques, qui sont vécues comme un rejet.",
+    "Aller directement aux chiffres en ignorant la relation."
+   ]
+  }
+ },
+ "T": {
+  "nom": "Le Travailleur (ou Analyseur)",
+  "couleur": "var(--c-travaillomane)",
+  "detail": {
+   "qui": "Vous êtes logique, organisé et responsable. Vous percevez le monde par vos pensées : les faits, les données et les raisonnements. Vous aimez que les choses soient claires, structurées et faites dans les règles, et l'on peut compter sur votre sérieux.",
+   "fonction": [
+    "Votre moteur : être reconnu pour la qualité de votre travail et vos compétences, et structurer votre temps (planning, priorités, échéances).",
+    "Vous travaillez mieux avec des objectifs précis, un cadre clair et le temps de bien faire.",
+    "Vous aimez analyser, comparer et décider à partir d'éléments objectifs.",
+    "Sous stress léger, vous contrôlez et détaillez à l'excès (driver « Sois parfait ») : vous voulez tout faire vous-même et déléguez difficilement."
+   ],
+   "communique": [
+    "Votre canal préféré est le canal interrogatif : vous posez des questions, demandez des précisions et aimez les informations factuelles.",
+    "Vous parlez de façon structurée, précise et plutôt neutre, avec peu d'émotions affichées.",
+    "Vous pouvez paraître froid ou distant alors que vous êtes simplement concentré sur le contenu."
+   ],
+   "faire": [
+    "Aller droit au contenu : faits, chiffres, objectifs, échéances.",
+    "Donner des informations précises, dans un ordre logique, si possible à l'avance.",
+    "Reconnaître la qualité de votre travail et vos compétences.",
+    "Vous laisser le temps d'analyser avant de décider."
+   ],
+   "eviter": [
+    "Le flou, les consignes vagues ou les changements de dernière minute.",
+    "Les débordements émotionnels et les familiarités excessives.",
+    "Les remarques personnelles sans rapport avec le travail."
+   ]
+  }
+ },
+ "P": {
+  "nom": "Le Persévérant",
+  "couleur": "var(--c-perseverant)",
+  "detail": {
+   "qui": "Vous êtes engagé, consciencieux et attaché à vos valeurs. Vous percevez le monde par vos opinions et vos convictions : vous jugez vite si une chose est juste ou non, et vous ne lâchez pas ce qui compte pour vous. Dévoué, observateur et fiable, vous allez au bout de vos engagements.",
+   "fonction": [
+    "Votre moteur : voir votre travail et vos convictions reconnus, et donner du sens à votre engagement.",
+    "Vous vous investissez à fond dans une cause ou un projet qui correspond à vos valeurs.",
+    "Vous avez des exigences élevées envers vous-même et envers les autres, et vous aimez qu'on vous demande votre avis.",
+    "Sous stress léger, vous devenez critique et moralisateur (driver « Sois parfait ») : vous vous focalisez sur ce qui ne va pas et imposez vos opinions."
+   ],
+   "communique": [
+    "Votre canal préféré est le canal interrogatif : vous échangez des opinions, demandez celles des autres et défendez la vôtre.",
+    "Vous parlez avec conviction, avec des formules comme « je crois que » ou « à mon avis ».",
+    "Vous pouvez être perçu comme rigide quand vous défendez vos principes."
+   ],
+   "faire": [
+    "Vous demander votre avis et en tenir compte.",
+    "Reconnaître votre travail et votre engagement.",
+    "Donner du sens à ce qui est demandé et rester cohérent avec les valeurs annoncées.",
+    "Vous laisser le temps de vous forger une opinion."
+   ],
+   "eviter": [
+    "Remettre en cause vos valeurs ou vos convictions de façon brutale.",
+    "Vous contourner ou décider sans vous consulter.",
+    "L'incohérence et les promesses non tenues."
+   ]
+  }
+ },
+ "R": {
+  "nom": "Le Rêveur (ou Imagineur)",
+  "couleur": "var(--c-reveur)",
+  "detail": {
+   "qui": "Vous êtes calme, réfléchi et imaginatif. Vous percevez le monde par l'imagination et l'introspection : vous aimez prendre du recul, observer et penser à votre rythme. Discret, patient et autonome, vous êtes à l'aise dans votre bulle.",
+   "fonction": [
+    "Votre moteur : avoir du temps seul, au calme, pour vous ressourcer et réfléchir.",
+    "Vous travaillez bien sur des tâches qui demandent de la concentration et de l'imagination, sans pression.",
+    "Vous avez besoin de consignes claires pour passer à l'action : vous attendez souvent qu'on vous dise quoi faire.",
+    "Sous stress léger, vous vous repliez (driver « Sois fort ») : vous devenez passif, attendez et vous coupez des autres."
+   ],
+   "communique": [
+    "Votre canal préféré est le canal directif : des consignes simples, précises, sans ambiguïté.",
+    "Vous parlez peu, d'une voix calme, avec des silences, et vous prenez peu l'initiative de la conversation.",
+    "Vous pouvez sembler absent ou indifférent alors que vous réfléchissez."
+   ],
+   "faire": [
+    "Donner des directives claires et précises : quoi, comment, pour quand.",
+    "Respecter vos temps de silence et vous laisser le temps de répondre.",
+    "Vous proposer des moments au calme, seul.",
+    "Rester bref et poser une question à la fois."
+   ],
+   "eviter": [
+    "Vous mettre sous les projecteurs ou vous bousculer.",
+    "Les demandes vagues du type « fais comme tu le sens ».",
+    "L'urgence, la pression et les approches trop familières ou ludiques."
+   ]
+  }
+ },
+ "Rb": {
+  "nom": "Le Rebelle (ou Énergiseur)",
+  "couleur": "var(--c-rebelle)",
+  "detail": {
+   "qui": "Vous êtes spontané, créatif et plein d'énergie. Vous percevez le monde par vos réactions : « j'aime » ou « je n'aime pas ». Vous apportez du jeu, de l'humour et de la fantaisie, et vous avez besoin d'amusement pour vous sentir à l'aise.",
+   "fonction": [
+    "Votre moteur : des contacts ludiques, de l'humour, de la créativité et la liberté de réagir à votre façon.",
+    "Vous vous engagez à fond quand une tâche vous plaît, et vous décrochez vite quand elle vous ennuie.",
+    "Vous supportez mal les règles rigides et les cadres imposés.",
+    "Sous stress léger, vous râlez et rejetez la faute sur les autres ou sur la situation (driver « Fais des efforts »)."
+   ],
+   "communique": [
+    "Votre canal préféré est le canal ludique et émotif : un ton vivant, de l'humour, des réactions franches.",
+    "Vous dites tout de suite ce que vous aimez ou n'aimez pas, avec des mots imagés et des exclamations.",
+    "Vous pouvez passer pour provocateur alors que vous réagissez spontanément."
+   ],
+   "faire": [
+    "Utiliser l'humour et un ton léger, détendu.",
+    "Proposer plutôt que commander, et laisser de la liberté dans la manière de faire.",
+    "Rendre la tâche amusante et variée, avec de la créativité.",
+    "Accepter vos réactions spontanées sans les prendre pour une attaque."
+   ],
+   "eviter": [
+    "Un ton autoritaire, de longues consignes, des règles rigides.",
+    "La monotonie et la routine.",
+    "Interpréter vos réactions spontanées comme un manque de sérieux."
+   ]
+  }
+ },
+ "Pr": {
+  "nom": "Le Promoteur",
+  "couleur": "var(--c-promoteur)",
+  "detail": {
+   "qui": "Vous êtes charmeur, adaptable et tourné vers l'action. Vous percevez le monde par vos actions : vous aimez agir, relever des défis, saisir les opportunités et obtenir des résultats rapidement. Efficace dans l'urgence, vous êtes à l'aise face à l'imprévu.",
+   "fonction": [
+    "Votre moteur : l'excitation, les défis et les résultats rapides ; vous avez besoin d'être stimulé.",
+    "Vous aimez décider vite, prendre des risques et passer à l'action sans trop de préparation.",
+    "Vous vous adaptez vite aux personnes et aux situations, et vous savez négocier.",
+    "Sous stress léger, vous poussez, provoquez et testez les limites (driver « Sois fort ») pour retrouver de la stimulation."
+   ],
+   "communique": [
+    "Votre canal préféré est le canal directif : bref, concret, orienté action.",
+    "Vous parlez vite, allez à l'essentiel et aimez les échanges dynamiques ; vous charmez facilement votre interlocuteur.",
+    "Vous pouvez couper la parole ou paraître impatient devant les détails et les longues explications."
+   ],
+   "faire": [
+    "Aller à l'essentiel : objectif, enjeu, résultat attendu.",
+    "Proposer un défi concret et un résultat rapide.",
+    "Être réactif, direct et dynamique.",
+    "Vous laisser de l'autonomie et des marges de manœuvre."
+   ],
+   "eviter": [
+    "Les longs discours et les détails à n'en plus finir.",
+    "Les procédures lourdes et les temps d'attente.",
+    "Le manque de franchise."
+   ]
+  }
+ }
+},
   questions:[
    {q:"Face à un nouveau projet, ma première réaction est de…",o:{
      E:"m'assurer que l'ambiance et les relations seront bonnes",
@@ -306,101 +484,221 @@ const MODES = {
   ]
  },
  disc:{
+  kind:"pm",
   titre:"DISC",
-  sousTitre:"Répartition de vos réponses entre les quatre profils.",
-  labelBase:"Profil dominant",
-  labelSecond:"Style secondaire",
-  note:"Chacun combine les quatre profils à des degrés divers : il n'y a pas de bon ou de mauvais profil. Les styles s'adaptent selon les contextes. Pour un rapport fiable, passez par une évaluation DISC certifiée.",
+  sousTitre:"Total de chaque style = coches « le plus » moins coches « le moins ». Les quatre totaux s'additionnent à zéro.",
+  note:"Le style dominant est celui dont le total est le plus élevé. Le style secondaire doit être positif et atteindre au moins 40 % du dominant (3 points minimum). Si aucun total ne dépasse 2, le profil est équilibré. Chacun combine les quatre styles : aucun profil n'est meilleur qu'un autre. Questionnaire, clé et grille de calcul d'après le « Test DISC à imprimer » de disc-test.org/fr. Outil d'auto-observation non validé psychométriquement : pour un rapport fiable, passez par une évaluation certifiée.",
   types:{
-   D:{nom:"Dominant",couleur:"var(--d-D)",
-      resume:"Direct, déterminé et orienté résultats. Aime relever des défis et décider vite.",
-      besoins:["Autonomie, pouvoir de décision et défis","Résultats rapides et visibles"],
-      conseil:"Pour communiquer avec lui : allez droit au but, présentez des options et des résultats, évitez les détails superflus."},
-   I:{nom:"Influent",couleur:"var(--d-I)",
-      resume:"Enthousiaste, sociable et persuasif. Fédère par l'énergie et le contact.",
-      besoins:["Reconnaissance et contacts sociaux","Liberté d'expression et variété"],
-      conseil:"Pour communiquer avec lui : soyez chaleureux, laissez-lui la parole, valorisez ses idées et son énergie."},
-   S:{nom:"Stable",couleur:"var(--d-S)",
-      resume:"Calme, patient et loyal. Apporte de la régularité et de l'harmonie à l'équipe.",
-      besoins:["Sécurité, routine et climat harmonieux","Changements annoncés et progressifs"],
-      conseil:"Pour communiquer avec lui : prenez votre temps, rassurez, expliquez les changements étape par étape."},
-   C:{nom:"Consciencieux",couleur:"var(--d-C)",
-      resume:"Précis, analytique et rigoureux. Attaché à la qualité, aux règles et aux faits.",
-      besoins:["Informations exactes et temps d'analyse","Standards de qualité clairs"],
-      conseil:"Pour communiquer avec lui : donnez des faits, des données et des consignes précises, respectez les procédures."}
-  },
-  questions:[
-   {q:"Face à un nouveau projet, je commence par…",o:{
-     D:"fixer l'objectif et passer à l'action",
-     I:"en parler autour de moi pour embarquer les autres",
-     S:"m'assurer que l'équipe est à l'aise et que le rythme est tenable",
-     C:"rassembler les informations et évaluer les risques"}},
-   {q:"En réunion, je suis plutôt celui ou celle qui…",o:{
-     D:"va droit au but et pousse à décider",
-     I:"anime, raconte et détend l'atmosphère",
-     S:"écoute et cherche le consensus",
-     C:"prépare des données et pose des questions précises"}},
-   {q:"Ma plus grande force est…",o:{
-     D:"ma détermination",
-     I:"mon enthousiasme",
-     S:"ma fiabilité et ma patience",
-     C:"ma rigueur"}},
-   {q:"Sous pression, j'ai tendance à…",o:{
-     D:"devenir autoritaire et impatient",
-     I:"me disperser et trop parler",
-     S:"me braquer en silence ou éviter le conflit",
-     C:"me perfectionner à l'excès et critiquer"}},
-   {q:"Pour prendre une décision, je…",o:{
-     D:"décide vite, à l'instinct, en visant le résultat",
-     I:"me fie à mon enthousiasme et à l'avis de mes proches",
-     S:"prends mon temps et évite les changements brusques",
-     C:"analyse en détail avant de trancher"}},
-   {q:"Ce qui me motive le plus :",o:{
-     D:"relever des défis et gagner",
-     I:"être reconnu(e) et en contact avec les autres",
-     S:"la sécurité et l'harmonie",
-     C:"la qualité, l'exactitude et l'expertise"}},
-   {q:"Face à un conflit, je…",o:{
-     D:"confronte directement",
-     I:"désamorce avec le sourire",
-     S:"évite et cherche à apaiser",
-     C:"reviens aux faits et aux règles"}},
-   {q:"Mon espace de travail est plutôt…",o:{
-     D:"efficace et tourné vers les résultats",
-     I:"vivant et personnalisé",
-     S:"stable, avec des routines rassurantes",
-     C:"ordonné, avec des procédures claires"}},
-   {q:"Face à un changement, je…",o:{
-     D:"l'accepte s'il fait avancer",
-     I:"suis attiré(e) par la nouveauté",
-     S:"préfère avancer étape par étape",
-     C:"veux comprendre pourquoi et comment"}},
-   {q:"Mes collègues me décriraient comme quelqu'un de…",o:{
-     D:"direct et exigeant",
-     I:"sociable et expressif",
-     S:"loyal et calme",
-     C:"précis et méthodique"}},
-   {q:"Ma façon de communiquer est plutôt…",o:{
-     D:"brève et directe",
-     I:"expressive et chaleureuse",
-     S:"posée et à l'écoute",
-     C:"structurée, souvent écrite"}},
-   {q:"Dans la gestion de mon temps, je…",o:{
-     D:"traite les urgences et vise les résultats",
-     I:"reste spontané(e), parfois au dernier moment",
-     S:"suis régulier(ère) et j'aime ma routine",
-     C:"planifie et respecte les délais et les standards"}},
-   {q:"Je suis mal à l'aise quand…",o:{
-     D:"je perds le contrôle ou que ça traîne",
-     I:"je me sens ignoré(e) ou rejeté(e)",
-     S:"il y a un conflit ou un changement brutal",
-     C:"il y a des erreurs, du flou ou de l'improvisation"}},
-   {q:"Pour convaincre quelqu'un, je…",o:{
-     D:"avance des résultats et des arguments forts",
-     I:"raconte une histoire avec de l'énergie",
-     S:"prends le temps de rassurer",
-     C:"m'appuie sur des preuves et des chiffres"}}
+ "D": {
+  "nom": "Dominance",
+  "couleur": "var(--d-D)",
+  "detail": {
+   "qui": "Vous êtes direct, déterminé et orienté résultats. Vous aimez relever des défis, décider vite et garder le contrôle de ce que vous menez. Vous avancez avec énergie, sans craindre les résistances, avec le sens de l'action et de l'efficacité.",
+   "fonction": [
+    "Ce qui vous motive : les défis, l'autonomie, le pouvoir de décision et les résultats visibles.",
+    "Vous prenez facilement l'initiative et le leadership, et vous êtes à l'aise sous pression.",
+    "Vous allez vite et préférez souvent faire les choses vous-même plutôt qu'attendre.",
+    "Sous pression ou face à un blocage, vous pouvez devenir impatient, autoritaire ou trop tranchant."
+   ],
+   "communique": [
+    "Vous parlez court, droit au but, avec assurance et franchise.",
+    "Vous préférez les faits et les résultats aux longs préambules, et vous coupez volontiers la parole quand vous avez compris.",
+    "Votre franchise peut être perçue comme brusque ou peu à l'écoute."
+   ],
+   "faire": [
+    "Aller droit au but : objectif, enjeu, résultat attendu.",
+    "Présenter des options plutôt qu'imposer une solution.",
+    "Vous laisser de l'autonomie et des responsabilités.",
+    "Rester direct, factuel et confiant, sans détours."
+   ],
+   "eviter": [
+    "Les longs détours et les détails superflus.",
+    "Les hésitations, le flou et la lenteur.",
+    "Chercher à vous contrôler ou à vous retirer la décision."
+   ]
+  }
+ },
+ "I": {
+  "nom": "Influence",
+  "couleur": "var(--d-I)",
+  "detail": {
+   "qui": "Vous êtes enthousiaste, sociable et persuasif. Vous aimez les contacts, l'énergie du groupe et les idées nouvelles. Vous mettez de l'ambiance et vous savez entraîner les autres par votre optimisme.",
+   "fonction": [
+    "Ce qui vous motive : la reconnaissance, les échanges, la liberté de vous exprimer et la variété.",
+    "Vous êtes à l'aise pour créer du lien, négocier, présenter et fédérer autour d'une idée.",
+    "Vous avez du mal avec la routine, les formalités et le travail solitaire trop long.",
+    "Sous pression, vous pouvez vous disperser, parler beaucoup, éviter les sujets tendus ou négliger les détails."
+   ],
+   "communique": [
+    "Vous parlez volontiers, avec expressivité, des anecdotes et de l'humour ; votre énergie est communicative.",
+    "Vous aimez les échanges vivants et le contact direct plutôt que les longs écrits.",
+    "Vous pouvez monopoliser la parole ou survoler les points techniques."
+   ],
+   "faire": [
+    "Prendre le temps d'échanger, de façon chaleureuse et enthousiaste.",
+    "Vous laisser la parole et valoriser vos idées.",
+    "Reconnaître vos contributions, y compris en public.",
+    "Vous aider pour les détails avec des outils concrets (rappels, listes de contrôle)."
+   ],
+   "eviter": [
+    "Un ton froid, formel ou purement factuel.",
+    "Vous critiquer devant les autres ou vous ignorer.",
+    "Les longs documents et les procédures lourdes sans échange."
+   ]
+  }
+ },
+ "S": {
+  "nom": "Stabilité",
+  "couleur": "var(--d-S)",
+  "detail": {
+   "qui": "Vous êtes calme, patient et loyal. Vous créez de la stabilité autour de vous : vous tenez parole, soutenez les autres et cherchez l'harmonie. On vous sait fiable, à l'écoute et constant.",
+   "fonction": [
+    "Ce qui vous motive : la sécurité, un climat harmonieux, des habitudes stables et des relations de confiance.",
+    "Vous travaillez avec régularité, allez au bout de ce que vous commencez et soutenez l'équipe.",
+    "Vous avez besoin de temps pour vous adapter aux changements, surtout brusques.",
+    "Sous pression, vous pouvez éviter le conflit, vous taire, vous braquer en silence ou dire oui alors que vous pensez non."
+   ],
+   "communique": [
+    "Vous parlez posément, écoutez beaucoup et cherchez le consensus.",
+    "Vous exprimez rarement un désaccord de façon directe : il faut parfois vous inviter à le dire.",
+    "Vous pouvez sembler réservé ou lent à réagir alors que vous réfléchissez."
+   ],
+   "faire": [
+    "Prendre son temps, rester calme et patient.",
+    "Rassurer et expliquer les changements à l'avance, étape par étape.",
+    "Vous demander clairement votre avis, sans vous presser.",
+    "Montrer une reconnaissance sincère pour votre fiabilité."
+   ],
+   "eviter": [
+    "La pression, l'urgence et les changements brusques.",
+    "L'agressivité et les conflits ouverts.",
+    "Vous imposer une décision sans vous écouter."
+   ]
+  }
+ },
+ "C": {
+  "nom": "Conformité",
+  "couleur": "var(--d-C)",
+  "detail": {
+   "qui": "Vous êtes précis, analytique et rigoureux. Vous vous appuyez sur les faits, les normes et la logique. Vous tenez à la qualité, vous vérifiez et planifiez, et vous n'aimez pas les décisions hâtives.",
+   "fonction": [
+    "Ce qui vous motive : la justesse, la qualité, l'expertise et des standards clairs.",
+    "Vous travaillez avec méthode, repérez les erreurs et les risques, et anticipez.",
+    "Vous avez besoin d'informations fiables et de temps pour analyser avant de décider.",
+    "Sous pression, vous pouvez devenir perfectionniste, critique ou froid, ou vous bloquer dans l'analyse."
+   ],
+   "communique": [
+    "Vous parlez de façon posée, précise et factuelle, souvent avec peu d'émotion apparente.",
+    "Vous préférez l'écrit et les échanges préparés aux discussions improvisées.",
+    "Vous posez beaucoup de questions et pouvez paraître distant ou exigeant."
+   ],
+   "faire": [
+    "Donner des faits, des données et des consignes précises.",
+    "Vous laisser le temps d'analyser et de vous préparer.",
+    "Rester rigoureux et structuré, et respecter les procédures annoncées.",
+    "Accepter vos questions comme un souci de qualité, pas comme de la méfiance."
+   ],
+   "eviter": [
+    "L'improvisation, le flou et les décisions à l'emporte-pièce.",
+    "Les approximations et les affirmations sans preuve.",
+    "Les familiarités excessives et la pression émotionnelle."
+   ]
+  }
+ }
+},
+  equilibre:{
+ "nom": "Équilibré",
+ "desc": "Aucun style ne ressort nettement : vos quatre styles sont exprimés à peu près au même degré.",
+ "detail": {
+  "qui": "Aucun de vos quatre styles ne domine : vous vous adaptez naturellement à la situation et à la personne en face de vous. Selon ce qui est utile, vous pouvez vous montrer tour à tour direct, chaleureux, posé ou méthodique.",
+  "fonction": [
+   "Votre force : la souplesse. Vous passez d'un mode d'action à un autre sans effort particulier.",
+   "Votre vigilance : à force de vous adapter, vos propres besoins peuvent passer au second plan. Observez ce qui vous coûte le plus d'énergie.",
+   "Sous pression, il peut être moins évident de repérer quel style vous mobilisez : prêtez attention à vos réactions habituelles.",
+   "Un profil équilibré peut aussi venir de réponses peu tranchées : refaire le test en pensant à un contexte précis (travail, vie privée) peut faire ressortir un style."
+  ],
+  "communique": [
+   "Vous ajustez votre manière de parler à votre interlocuteur : plus direct avec certains, plus chaleureux ou plus précis avec d'autres.",
+   "Vous êtes à l'aise avec des profils variés, mais votre façon de communiquer peut manquer d'une signature nette."
+  ],
+  "faire": [
+   "Dire clairement ce qui est attendu, pour que vous n'ayez pas à deviner quel style adopter.",
+   "Vous demander ce qui vous aide dans le contexte précis.",
+   "S'adapter à la situation plutôt qu'à une étiquette."
+  ],
+  "eviter": [
+   "Vous enfermer dans une seule case.",
+   "Supposer que vous partagez leurs préférences de communication."
   ]
+ }
+},
+  profils:{
+ "D": {
+  "nom": "Battant",
+  "desc": "Vous allez droit au but, et vite : vous prenez l'initiative, décidez sans longues discussions et ne craignez pas les résistances. Ce qui compte pour vous : garder le contrôle et obtenir des résultats mesurables."
+ },
+ "DI": {
+  "nom": "Pionnier",
+  "desc": "Allant et charme : vous avancez vite vers l'objectif et savez entraîner les autres. Vous convainquez par l'élan et l'enthousiasme, décidez dans l'action, mais manquez souvent de patience pour les détails et de prudence."
+ },
+ "DC": {
+  "nom": "Stratège",
+  "desc": "Le résultat par la qualité : vous êtes exigeant envers vous-même et les autres, pensez de façon systémique et ne décidez jamais sans arguments. À l'aise dans les tâches complexes, vous pouvez paraître froid et trop critique."
+ },
+ "DS": {
+  "nom": "Pragmatique",
+  "desc": "Ténacité et fiabilité : vous avancez avec obstination vers l'objectif, mais sans bruit, et allez au bout des choses. Vous tenez à la fois à l'autonomie et à la stabilité, une combinaison rare."
+ },
+ "I": {
+  "nom": "Enthousiaste",
+  "desc": "Vous avancez grâce aux autres : vous nouez facilement des liens, communiquez votre enthousiasme et convainquez par la parole et votre bonne humeur. La reconnaissance et les échanges vivants comptent pour vous ; les formalités et la routine vous lassent vite."
+ },
+ "ID": {
+  "nom": "Fédérateur",
+  "desc": "Énergie et élan : vous gagnez les autres à vos idées et n'hésitez pas à prendre l'initiative. Vous « vendez » facilement idées et objectifs, mais risquez de surestimer vos forces et de sous-estimer les détails."
+ },
+ "IS": {
+  "nom": "Mentor",
+  "desc": "Chaleur et attention : vous inspirez la sympathie, savez soutenir et rassembler. Les relations et l'ambiance comptent pour vous ; les conflits et les exigences dures vous sont difficiles à vivre."
+ },
+ "IC": {
+  "nom": "Orateur",
+  "desc": "Éloquence et précision : vous savez présenter de façon convaincante une position bien réfléchie. Vous alliez sociabilité et attention aux faits, mais pouvez hésiter entre spontanéité et prudence."
+ },
+ "S": {
+  "nom": "Pilier",
+  "desc": "Vous créez de la stabilité : vous tenez parole, allez au bout de ce que vous commencez, soutenez les autres et apaisez les conflits. La prévisibilité, la confiance et le temps de s'habituer au changement comptent pour vous."
+ },
+ "SI": {
+  "nom": "Diplomate",
+  "desc": "Calme et bienveillance : vous créez un climat de confiance, arrondissez les angles et soutenez l'équipe. Dire « non » et défendre une décision impopulaire vous est difficile."
+ },
+ "SC": {
+  "nom": "Spécialiste",
+  "desc": "Fiabilité et soin : vous travaillez avec méthode, respectez les règles et menez les choses à terme sans précipitation. Vous appréciez la stabilité et des attentes claires ; les changements brusques et la pression vous pèsent."
+ },
+ "SD": {
+  "nom": "Bâtisseur",
+  "desc": "Persévérance et patience : vous menez les choses à bien, calmement mais fermement, sans vous perdre en discussions inutiles. Fiable sur la durée, vous pouvez toutefois sembler têtu vu de l'extérieur."
+ },
+ "C": {
+  "nom": "Analyste",
+  "desc": "Vous vous appuyez sur les faits et les normes : vous vérifiez, analysez, planifiez et n'aimez pas les décisions hâtives. La qualité et la justesse comptent davantage pour vous que la vitesse et l'effet produit."
+ },
+ "CD": {
+  "nom": "Perfectionniste",
+  "desc": "Normes et volonté : vous exigez la précision de vous-même et des autres, repérez vite les erreurs et n'hésitez pas à les signaler. À l'aise dans les missions d'expertise complexes, vous pouvez vous montrer trop strict et fermé."
+ },
+ "CS": {
+  "nom": "Expert",
+  "desc": "Précision et constance : vous travaillez avec réflexion, vérifiez les détails et vous appuyez sur des méthodes éprouvées. Un spécialiste fiable, pour qui l'incertitude et les changements rapides sont difficiles à vivre."
+ },
+ "CI": {
+  "nom": "Conseiller",
+  "desc": "Analyse et contact : vous savez aller au fond d'une question et l'expliquer simplement aux autres. Combinaison rare : prudence dans les conclusions et aisance dans les échanges. Parfois, la contradiction interne entre « vérifier » et « partager » vous gêne."
+ }
+},
+  blocs:[[["Sociabilité", "I"], ["Détermination", "D"], ["Précision", "C"], ["Patience", "S"]], [["Je vérifie chaque détail", "C"], ["Je soutiens les autres", "S"], ["Je prends l'initiative", "D"], ["Je me fais facilement des amis", "I"]], [["J'apprécie la stabilité", "S"], ["J'apprécie l'ordre et les règles", "C"], ["J'aime être au centre de l'attention", "I"], ["J'aime la compétition", "D"]], [["Franc-parler", "D"], ["Calme", "S"], ["Optimisme", "I"], ["Prudence", "C"]], [["Je convaincs facilement", "I"], ["Je m'appuie sur les faits", "C"], ["Je sais écouter", "S"], ["Je décide vite", "D"]], [["Fiabilité", "S"], ["Persévérance", "D"], ["Esprit méthodique", "C"], ["Charme", "I"]], [["Je m'en tiens au plan", "C"], ["J'inspire mon entourage", "I"], ["Je me fixe des objectifs ambitieux", "D"], ["Je tiens parole", "S"]], [["Indépendance", "D"], ["Esprit d'analyse", "C"], ["Équilibre", "S"], ["Expressivité", "I"]], [["J'aime faire de nouvelles rencontres", "I"], ["J'aime mes habitudes", "S"], ["J'aime relever des défis", "D"], ["J'aime creuser les détails", "C"]], [["Discipline", "C"], ["Exigence", "D"], ["Goût de la conversation", "I"], ["Bienveillance", "S"]], [["J'évite les conflits", "S"], ["J'exprime facilement mes émotions", "I"], ["Je pèse chacun de mes mots", "C"], ["Je dis franchement ce que je pense", "D"]], [["Volonté", "D"], ["Enthousiasme", "I"], ["Modestie", "S"], ["Minutie", "C"]], [["Je donne de l'énergie aux autres", "I"], ["Je veille à la qualité", "C"], ["Je prends les choses en main", "D"], ["J'aide l'équipe", "S"]], [["Esprit rationnel", "C"], ["Constance", "S"], ["Spontanéité", "I"], ["Audace", "D"]], [["Priorité à la stabilité", "S"], ["Priorité aux résultats", "D"], ["Priorité à la qualité", "C"], ["Priorité à la communication", "I"]], [["Impatience", "D"], ["Esprit trop critique", "C"], ["Lenteur face au changement", "S"], ["Impulsivité", "I"]], [["Je fais confiance aux gens", "I"], ["Je reste fidèle", "S"], ["Je prends des risques", "D"], ["Je respecte les normes", "C"]], [["Réserve", "C"], ["Charisme", "I"], ["Douceur", "S"], ["Combativité", "D"]], [["Je ne tire pas de conclusions hâtives", "S"], ["Je clarifie tous les détails au préalable", "C"], ["Je vais droit au but", "D"], ["Je sympathise facilement avec les gens", "I"]], [["Assurance", "D"], ["Tact", "S"], ["Éloquence", "I"], ["Sens de l'organisation", "C"]], [["J'aime prendre la parole en public", "I"], ["J'aime diriger", "D"], ["J'aime analyser", "C"], ["J'aime aider", "S"]], [["Rigueur", "C"], ["Attention aux autres", "S"], ["Convivialité", "I"], ["Ambition", "D"]], [["J'accepte les choses telles qu'elles sont", "S"], ["Je m'enthousiasme vite pour la nouveauté", "I"], ["Je défends mon point de vue", "D"], ["J'insiste sur l'exactitude", "C"]], [["Sens du commandement", "D"], ["Logique", "C"], ["Vivacité", "I"], ["Sérénité", "S"]]]
  }
 };
 
@@ -410,31 +708,77 @@ let mode = null, cur = null, idx = 0, answers = [], orders = [];
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function show(id){["lock","intro","quiz","result"].forEach(s=>$(s).classList.toggle("hidden",s!==id));window.scrollTo(0,0);}
 
+const isPM = () => cur.kind==="pm";
+const nSteps = () => isPM() ? cur.blocs.length : cur.questions.length;
+function answered(){
+  const a=answers[idx];
+  return isPM() ? (a.plus!==null && a.minus!==null) : a!==null;
+}
+
 function start(m){
   mode=m; cur=MODES[m]; idx=0;
-  answers=new Array(cur.questions.length).fill(null);
-  orders=cur.questions.map(q=>shuffle(Object.keys(q.o)));
+  if(isPM()){
+    answers=cur.blocs.map(()=>({plus:null,minus:null}));
+    orders=[];
+  } else {
+    answers=new Array(cur.questions.length).fill(null);
+    orders=cur.questions.map(q=>shuffle(Object.keys(q.o)));
+  }
   render(); show("quiz");
 }
 
-function render(){
-  const q=cur.questions[idx];
-  $("qtext").textContent=q.q;
-  $("pcount").textContent=cur.titre+" – question "+(idx+1)+" sur "+cur.questions.length;
-  $("pbar").style.width=(idx/cur.questions.length*100)+"%";
-  const box=$("opts");
-  box.querySelectorAll("label").forEach(l=>l.remove());
-  orders[idx].forEach(k=>{
-    const l=document.createElement("label");l.className="opt";
-    const i=document.createElement("input");i.type="radio";i.name="q";i.value=k;
-    i.checked=answers[idx]===k;
-    i.addEventListener("change",()=>{answers[idx]=k;$("next").disabled=false;});
-    const s=document.createElement("span");s.textContent=q.o[k];
-    l.append(i,s);box.append(l);
+function toggleMark(kind,i){
+  const a=answers[idx], other = kind==="plus" ? "minus" : "plus";
+  if(a[kind]===i){ a[kind]=null; }
+  else { a[kind]=i; if(a[other]===i) a[other]=null; }
+  render();
+}
+
+function renderPM(box){
+  const b=cur.blocs[idx], a=answers[idx];
+  $("qtext").textContent="Bloc "+(idx+1);
+  const help=document.createElement("p"); help.className="muted pmhelp";
+  help.textContent="Choisissez l'affirmation qui vous ressemble le plus (+) et celle qui vous ressemble le moins (−).";
+  box.append(help);
+  b.forEach((it,i)=>{
+    const row=document.createElement("div");
+    row.className="pmrow"+((a.plus===i||a.minus===i)?" sel":"");
+    const t=document.createElement("span"); t.className="pmtxt"; t.textContent=it[0];
+    const g=document.createElement("span"); g.className="pmbtns";
+    [["plus","+","me ressemble le plus"],["minus","−","me ressemble le moins"]].forEach(([kind,sym,lab])=>{
+      const bt=document.createElement("button");
+      bt.type="button"; bt.className="pmbtn "+kind; bt.textContent=sym;
+      bt.setAttribute("aria-pressed", a[kind]===i ? "true":"false");
+      bt.setAttribute("aria-label", "Cette affirmation "+lab+" : "+it[0]);
+      bt.addEventListener("click",()=>toggleMark(kind,i));
+      g.append(bt);
+    });
+    row.append(t,g); box.append(row);
   });
+}
+
+function render(){
+  const n=nSteps(), box=$("opts");
+  $("pcount").textContent=cur.titre+" – "+(isPM()?"bloc ":"question ")+(idx+1)+" sur "+n;
+  $("pbar").style.width=(idx/n*100)+"%";
+  box.querySelectorAll("label,.pmrow,.pmhelp").forEach(l=>l.remove());
+  if(isPM()){
+    renderPM(box);
+  } else {
+    const q=cur.questions[idx];
+    $("qtext").textContent=q.q;
+    orders[idx].forEach(k=>{
+      const l=document.createElement("label");l.className="opt";
+      const i=document.createElement("input");i.type="radio";i.name="q";i.value=k;
+      i.checked=answers[idx]===k;
+      i.addEventListener("change",()=>{answers[idx]=k;$("next").disabled=false;});
+      const s=document.createElement("span");s.textContent=q.o[k];
+      l.append(i,s);box.append(l);
+    });
+  }
   $("prev").disabled=idx===0;
-  $("next").disabled=answers[idx]===null;
-  $("next").textContent=idx===cur.questions.length-1?"Voir mon résultat":"Suivant";
+  $("next").disabled=!answered();
+  $("next").textContent=idx===n-1?"Voir mon résultat":"Suivant";
 }
 
 const IMGS = {
@@ -444,7 +788,98 @@ const IMGS = {
 let lastResult = null;
 const MAIL_HINT = "Votre adresse n'est pas enregistrée : elle sert uniquement à préparer le message dans votre messagerie.";
 
+const fmt = v => v>0 ? "+"+v : v<0 ? "−"+Math.abs(v) : "0";
+const pl = n => n>1 ? "s" : "";
+
+function discProfile(tot){
+  const ORDER=["D","I","S","C"];
+  const sorted=[...ORDER].sort((x,y)=>tot[y]-tot[x]||ORDER.indexOf(x)-ORDER.indexOf(y));
+  const top=sorted[0], sec=sorted[1];
+  if(tot[top]<=2) return {code:"",equilibre:true,sorted};
+  const hasSec = tot[sec]>0 && tot[sec]>=3 && tot[sec]*5>=tot[top]*2; /* au moins 40 % du dominant */
+  return {code: hasSec ? top+sec : top, equilibre:false, sorted};
+}
+
+function resultsPM(){
+  const ORDER=["D","I","S","C"];
+  const plus={D:0,I:0,S:0,C:0}, minus={D:0,I:0,S:0,C:0}, tot={};
+  answers.forEach((a,b)=>{ plus[cur.blocs[b][a.plus][1]]++; minus[cur.blocs[b][a.minus][1]]++; });
+  ORDER.forEach(k=>tot[k]=plus[k]-minus[k]);
+  const pr=discProfile(tot);
+
+  $("rtitle").textContent="Votre résultat – "+cur.titre;
+  $("rsub").textContent=cur.sousTitre;
+  $("rnote").textContent=cur.note;
+
+  const bars=$("bars"); bars.innerHTML="";
+  pr.sorted.forEach(k=>{
+    const t=cur.types[k], v=tot[k];
+    const w = v===0 ? 0 : Math.max(Math.abs(v)/24*50, 1.5);
+    const d=document.createElement("div"); d.className="dv";
+    d.innerHTML='<div class="row"><span><i class="dot" style="background:'+t.couleur+'"></i>'+t.nom+' ('+k+')</span><span>'+fmt(v)+'</span></div>'+
+      '<div class="track"><span class="mid"></span><span class="fill2" style="background:'+t.couleur+';'+(v>=0?'left:50%':'right:50%')+'"></span></div>'+
+      '<div class="cap">'+plus[k]+' coche'+pl(plus[k])+' « le plus », '+minus[k]+' coche'+pl(minus[k])+' « le moins »</div>';
+    bars.append(d);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{d.querySelector(".fill2").style.width=w+"%";}));
+  });
+
+  let titre, desc;
+  if(pr.equilibre){ titre="Profil équilibré"; desc=cur.equilibre.desc; }
+  else { const p=cur.profils[pr.code]; titre="Votre profil : "+pr.code+" – "+p.nom; desc=p.desc; }
+
+  const lecture=[];
+  if(pr.equilibre){
+    lecture.push("Aucun total ne dépasse 2 : il n'y a pas de style dominant.");
+  } else {
+    const d1=pr.code[0];
+    lecture.push("Style dominant : "+cur.types[d1].nom+" ("+d1+"), total "+fmt(tot[d1])+".");
+    if(pr.code.length===2){
+      const d2=pr.code[1];
+      lecture.push("Style secondaire : "+cur.types[d2].nom+" ("+d2+"), total "+fmt(tot[d2])+".");
+    } else {
+      lecture.push("Pas de style secondaire : le deuxième total doit être positif et atteindre au moins 40 % du dominant (3 points minimum).");
+    }
+  }
+  const base=$("base"), sec=$("second"), third=$("third");
+  base.style.borderLeftColor = pr.equilibre ? "var(--accent)" : cur.types[pr.code[0]].couleur;
+  base.innerHTML="<h3>"+titre+"</h3><p>"+desc+"</p>"+lecture.map(l=>'<p class="muted">'+l+"</p>").join("");
+
+  const synthese=[titre, desc, lecture.join("\n")];
+  third.classList.add("hidden");
+  if(pr.equilibre){
+    sec.style.borderLeftColor="var(--accent)";
+    sec.innerHTML="<h3>Ce que cela signifie</h3>"+detailHTML(cur.equilibre.detail);
+    synthese.push("Ce que cela signifie :\n"+detailText(cur.equilibre.detail));
+  } else {
+    const d1=pr.code[0], t1=cur.types[d1];
+    sec.style.borderLeftColor=t1.couleur;
+    sec.innerHTML="<h3>Votre style dominant : "+t1.nom+" ("+d1+")</h3>"+detailHTML(t1.detail);
+    synthese.push("Votre style dominant : "+t1.nom+" ("+d1+")\n"+detailText(t1.detail));
+    if(pr.code.length===2){
+      const d2=pr.code[1], t2=cur.types[d2];
+      third.classList.remove("hidden");
+      third.style.borderLeftColor=t2.couleur;
+      third.innerHTML="<details><summary>Votre style secondaire : "+t2.nom+" ("+d2+")</summary>"+detailHTML(t2.detail)+"</details>";
+      synthese.push("Votre style secondaire : "+t2.nom+" ("+d2+")\n"+detailText(t2.detail));
+    }
+  }
+
+  const im=IMGS[mode];
+  $("resimg").src=im.src; $("resimg").alt=im.alt;
+  $("dllink").href=im.src; $("dllink").download=im.file;
+  lastResult={
+    titre:cur.titre,
+    entete:"Totaux (coches « le plus » moins coches « le moins ») :",
+    lignes:pr.sorted.map(k=>cur.types[k].nom+" ("+k+") : "+fmt(tot[k])+" ("+plus[k]+" « le plus », "+minus[k]+" « le moins »)"),
+    synthese:synthese
+  };
+  $("mailmsg").textContent=MAIL_HINT;
+  $("pbar").style.width="100%";
+  show("result");
+}
+
 function results(){
+  if(isPM()) return resultsPM();
   const counts={};
   Object.keys(cur.types).forEach(k=>counts[k]=0);
   answers.forEach(a=>counts[a]++);
@@ -462,26 +897,44 @@ function results(){
     bars.append(d);
     requestAnimationFrame(()=>requestAnimationFrame(()=>{d.querySelector(".fill").style.width=pct+"%";}));
   });
-  fill($("base"),sorted[0],cur.labelBase);
-  fill($("second"),sorted[1],cur.labelSecond);
+  fill($("base"),sorted[0],cur.labelBase,false);
+  fill($("second"),sorted[1],cur.labelSecond,true);
+  $("third").classList.add("hidden");
   const im=IMGS[mode];
   $("resimg").src=im.src; $("resimg").alt=im.alt;
   $("dllink").href=im.src; $("dllink").download=im.file;
   lastResult={
     titre:cur.titre,
+    entete:"Répartition :",
     lignes:sorted.map(k=>cur.types[k].nom+" : "+Math.round(counts[k]/total*100)+" %"),
-    labelBase:cur.labelBase, base:cur.types[sorted[0]].nom,
-    labelSecond:cur.labelSecond, second:cur.types[sorted[1]].nom
+    synthese:[cur.labelBase+" : "+cur.types[sorted[0]].nom, detailText(cur.types[sorted[0]].detail),
+              cur.labelSecond+" : "+cur.types[sorted[1]].nom, detailText(cur.types[sorted[1]].detail)]
   };
   $("mailmsg").textContent=MAIL_HINT;
   $("pbar").style.width="100%";
   show("result");
 }
 
-function fill(el,k,titre){
-  const t=cur.types[k];
+const ul = a => "<ul>"+a.map(x=>"<li>"+x+"</li>").join("")+"</ul>";
+function detailHTML(d){
+  return "<h4>Qui vous êtes</h4><p>"+d.qui+"</p>"+
+    "<h4>Comment vous fonctionnez</h4>"+ul(d.fonction)+
+    "<h4>Comment vous communiquez</h4>"+ul(d.communique)+
+    "<h4>Comment communiquer avec vous</h4><p class=\"sub\">À privilégier</p>"+ul(d.faire)+"<p class=\"sub\">À éviter</p>"+ul(d.eviter);
+}
+function detailText(d){
+  const l = a => a.map(x=>"- "+x).join("\n");
+  return "Qui vous êtes :\n"+d.qui+
+    "\n\nComment vous fonctionnez :\n"+l(d.fonction)+
+    "\n\nComment vous communiquez :\n"+l(d.communique)+
+    "\n\nComment communiquer avec vous :\nÀ privilégier :\n"+l(d.faire)+"\nÀ éviter :\n"+l(d.eviter);
+}
+function fill(el,k,titre,collapsible){
+  const t=cur.types[k], h=titre+" : "+t.nom;
   el.style.borderLeftColor=t.couleur;
-  el.innerHTML="<h3>"+titre+" : "+t.nom+"</h3><p>"+t.resume+"</p><ul>"+t.besoins.map(b=>"<li>"+b+"</li>").join("")+"</ul><p style='margin-top:10px'>"+t.conseil+"</p>";
+  el.innerHTML = collapsible
+    ? "<details><summary>"+h+"</summary>"+detailHTML(t.detail)+"</details>"
+    : "<h3>"+h+"</h3>"+detailHTML(t.detail);
 }
 
 /* Verrouillage : pour changer le code, modifier la valeur ci-dessous */
@@ -511,6 +964,13 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="Backspace") pressKey("back");
 });
 
+function fullText(){
+  const r=lastResult;
+  return "Mes résultats – "+r.titre+"\n\n"+r.entete+"\n"+r.lignes.map(l=>"- "+l).join("\n")+
+    "\n\n"+r.synthese.join("\n\n")+
+    "\n\nOutil pédagogique d'auto-observation, non validé psychométriquement.";
+}
+
 $("mailform").addEventListener("submit",e=>{
   e.preventDefault();
   const em=$("email").value.trim();
@@ -518,20 +978,41 @@ $("mailform").addEventListener("submit",e=>{
     $("mailmsg").textContent="Saisissez une adresse e-mail valide.";
     $("email").focus(); return;
   }
-  const r=lastResult; if(!r) return;
-  const body="Mes résultats – "+r.titre+"\n\nRépartition :\n"+r.lignes.map(l=>"- "+l).join("\n")+
-    "\n\n"+r.labelBase+" : "+r.base+"\n"+r.labelSecond+" : "+r.second+
-    "\n\nOutil pédagogique d'auto-observation, non validé psychométriquement.";
-  window.location.href="mailto:"+em+"?subject="+encodeURIComponent("Mes résultats – "+r.titre)+"&body="+encodeURIComponent(body);
-  $("mailmsg").textContent="Votre messagerie s'ouvre avec le message prêt : il ne reste qu'à l'envoyer.";
+  if(!lastResult) return;
+  window.location.href="mailto:"+em+"?subject="+encodeURIComponent("Mes résultats – "+lastResult.titre)+"&body="+encodeURIComponent(fullText());
+  $("mailmsg").textContent="Votre messagerie s'ouvre avec le message prêt : il ne reste qu'à l'envoyer. Si le message est coupé ou ne s'ouvre pas, utilisez les boutons ci-dessous.";
 });
+
+$("copybtn").onclick=async()=>{
+  if(!lastResult) return;
+  const t=fullText(); let done=false;
+  try{ await navigator.clipboard.writeText(t); done=true; }
+  catch(err){
+    const ta=document.createElement("textarea"); ta.value=t; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.opacity="0"; document.body.append(ta); ta.select();
+    try{ done=document.execCommand("copy"); }catch(_){ done=false; }
+    ta.remove();
+  }
+  $("mailmsg").textContent = done ? "Texte copié : collez-le dans un e-mail ou un document." : "La copie a échoué : utilisez « Télécharger (.txt) ».";
+};
+
+$("txtbtn").onclick=()=>{
+  if(!lastResult) return;
+  const blob=new Blob(["\ufeff"+fullText()],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="mes-resultats-"+(mode==="disc"?"disc":"process-com")+".txt";
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  $("mailmsg").textContent="Fichier téléchargé : vous pouvez le joindre à un e-mail.";
+};
 
 $("m-pcm").onclick=()=>start("pcm");
 $("m-disc").onclick=()=>start("disc");
 $("again").onclick=()=>start(mode);
 $("switch").onclick=()=>show("intro");
 $("prev").onclick=()=>{if(idx>0){idx--;render();}};
-$("next").onclick=()=>{ if(idx<cur.questions.length-1){idx++;render();} else results(); };
+$("next").onclick=()=>{ if(!answered()) return; if(idx<nSteps()-1){idx++;render();} else results(); };
 </script>
 </body>
 </html>
